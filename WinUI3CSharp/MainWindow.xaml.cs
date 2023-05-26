@@ -49,8 +49,17 @@ namespace WinUI3CSharp
             FirstName = first;
             LastName = last;
         }
-        public string FirstName { get; private set; }
-        public string LastName { get; private set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+    
+    public class Parent : Person
+    {
+        public Parent(string first, string last, Person child): base(first, last)
+        {
+            this.Child = child;
+        }
+        public Person Child { get; private set; }
     }
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
@@ -61,75 +70,109 @@ namespace WinUI3CSharp
         {
             this.InitializeComponent();
             for (int i = 0; i < 1000; i++) {
-                People.Add(new("Steve", "Kirbach"));
-                People.Add(new("Heidi", "Heiser"));
+                var person1 = new Person("Jon", "Doe");
+                var person2 = new Person("Jane", "Doe");
+                People.Add(person1);
+                People.Add(person2);
+                People.Add(new Parent("Bob", "Doe", person1));
+                People.Add(new Parent("Rob", "Doe", person2));
             }
 
-            var id = WinRT.GuidGenerator.GetIID(typeof(Microsoft.UI.Xaml.Thickness));
-
-            var grid = new Grid()
-            {
-                RowDefinitions =
-                {
-                    new RowDefinition()
-                },
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition(),
-                    new ColumnDefinition(),
-                    new ColumnDefinition()
-                }
-            };
-
-            var rect1 = new Rectangle();
-            rect1.Width = 100;
-            rect1.Height = 100;
-            rect1.Fill = new SolidColorBrush(Colors.Red);
-            Grid.SetColumn(rect1, 0);
-            grid.Children.Add(rect1);
-
-            var rect2 = new Rectangle();
-            rect2.Width = 100;
-            rect2.Height = 100;
-            rect2.Fill = new SolidColorBrush(Colors.Blue);
-
-            Grid.SetColumn(rect2, 1);
-            grid.Children.Add(rect2);
-            
-            var rect3 = new Rectangle();
-            rect3.Width = 100;
-            rect3.Height = 100;
-            rect3.Fill = new SolidColorBrush(Colors.HotPink);
-
-            Grid.SetColumn(rect3, 2);
-            grid.Children.Add(rect3);
-
+            var count = 0;
+            var headerBlock = new TextBlock() { Height = 100 };
+            var panel = new StackPanel();
+            panel.HorizontalAlignment = HorizontalAlignment.Center;
+            panel.VerticalAlignment = VerticalAlignment.Center;
+            panel.Children.Add(headerBlock);
             var listView = new ListView();
-            listView.ItemsSource = People;
-            listView.ItemTemplate = new ItemTemplate<Person>((person) =>
+            panel.Children.Add(listView);
+
+            // Another way to update the template is just to use a binding and change visibility
+            // of an element, which will accomplish the same visual effect as the above example.
+            listView.Bind(People, new ItemTemplate<Person>((person) =>
             {
+                headerBlock.Text = $"{++count} created items";
                 var firstName = new TextBlock();
                 var lastName = new TextBlock();
-
-                return new TemplateContent<Person>()
+                var isParent = new TextBlock();
+                return new ()
                 {
-                    Bindings =
-                    {
-                        (person) => firstName.Text = person.FirstName,
-                        (person) => lastName.Text = person.LastName,
+                    Bindings = (person) => {
+                        firstName.Text = person.FirstName;
+                        lastName.Text = person.LastName;
+                        if (person is Parent parent)
+                        {
+                            isParent.Text = $" is parent of {parent.Child.FirstName} {parent.Child.LastName}";
+                            isParent.Visibility = Visibility.Visible;
+                        } else
+                        {
+                            isParent.Visibility = Visibility.Collapsed;
+                        }
                     },
                     RootElement = new StackPanel()
                     {
                         Orientation = Orientation.Horizontal,
                         Children = {
                             firstName,
-                            lastName
+                            lastName,
+                            isParent
                         }
                     }
                 };
-            });
+            }));
+
+            // Use an ItemTemplateSelector to select different item templates based off the item in the 
+            // data source. The below selector creates the same visual effect as above, and in this simple example,
+            // it is easier to simply bind visibility of the TextBlock.  
+            //listView.Bind(People, new ItemTemplateSelector<Person>((person) => person is Parent, new((person) =>
+            //{
+            //    headerBlock.Text = $"{++count} created items";
+            //    var firstName = new TextBlock();
+            //    var lastName = new TextBlock();
+            //    var isParent = new TextBlock();
+            //
+            //    return new()
+            //    {
+            //        Bindings = (person) => {
+            //            firstName.Text = person.FirstName;
+            //            lastName.Text = person.LastName;
+            //            isParent.Text = $" is parent of {((Parent)person).Child.FirstName} {((Parent)person).Child.LastName}";
+            //        },
+            //        RootElement = new StackPanel()
+            //        {
+            //            Orientation = Orientation.Horizontal,
+            //            Children = {
+            //                firstName,
+            //                lastName,
+            //                new TextBlock() { Text = " is parent" }
+            //            }
+            //        }
+            //    };
+            //}), new((person) =>
+            //{
+            //    headerBlock.Text = $"{++count} created items";
+            //    var firstName = new TextBlock();
+            //    var lastName = new TextBlock();
+
+            //    return new()
+            //    {
+            //        Bindings =
+            //        {
+            //            (person) => firstName.Text = person.FirstName,
+            //            (person) => lastName.Text = person.LastName,
+            //        },
+            //        RootElement = new StackPanel()
+            //        {
+            //            Orientation = Orientation.Horizontal,
+            //            Children = {
+            //                firstName,
+            //                lastName
+            //            }
+            //        }
+            //    };
+            //})));
             listView.Height = 50;
-            Content = listView;
+            Content = panel;
         }
 
         public System.Collections.ObjectModel.ObservableCollection<Person> People { get; } = new ();

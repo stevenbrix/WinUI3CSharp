@@ -9,12 +9,33 @@ using System.Threading.Tasks;
 
 namespace WinUI3CSharp
 {
-
+    class ItemTemplateSelector<Item> : DataTemplateSelector
+    {
+        ItemTemplate<Item> TrueTemplate;
+        ItemTemplate<Item> FalseTemplate;
+        Func<Item, bool> selector;
+        public ItemTemplateSelector(Func<Item, bool> selector, ItemTemplate<Item> trueTemplate, ItemTemplate<Item> falseTemplate)
+        {
+            this.selector = selector;
+            this.TrueTemplate = trueTemplate;
+            this.FalseTemplate = falseTemplate;
+        }
+        protected override DataTemplate SelectTemplateCore(object item)
+        {
+            if (selector((Item)item))
+            {
+                return TrueTemplate;
+            }
+            else
+            {
+                return FalseTemplate;
+            }
+        }
+    }
     public struct TemplateContent<Item>
     {
-        public TemplateContent() { }
-        public UIElement RootElement { get; set; } = null;
-        public List<Action<Item>> Bindings { get; } = new List<Action<Item>>();
+        public UIElement RootElement { get; set; }
+        public Action<Item> Bindings { get; set;  }
     }
     internal class DataTemplateComponent<Item> :
           global::Microsoft.UI.Xaml.Markup.IDataTemplateComponent
@@ -41,11 +62,7 @@ namespace WinUI3CSharp
             {
                 this.presenter.Content = content.Value.RootElement;
             }
-
-            foreach (var binding in content.Value.Bindings)
-            {
-                binding((Item)item);
-            }
+            content.Value.Bindings((Item)item);
         }
 
         public void Recycle()
@@ -54,7 +71,7 @@ namespace WinUI3CSharp
         }
     }
 
-    internal class ItemTemplate<Item> : DataTemplate, IComponentConnector
+    public class ItemTemplate<Item> : DataTemplate, IComponentConnector
     {
         Func<Item, TemplateContent<Item>> builder;
         public ItemTemplate(Func<Item, TemplateContent<Item>> builder)
