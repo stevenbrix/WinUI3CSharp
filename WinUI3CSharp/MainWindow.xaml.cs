@@ -60,8 +60,11 @@ namespace WinUI3CSharp
         public MainWindow()
         {
             this.InitializeComponent();
-            People.Add(new("Steve", "Kirbach"));
-            People.Add(new("Heidi", "Heiser"));
+            for (int i = 0; i < 1000; i++) {
+                People.Add(new("Steve", "Kirbach"));
+                People.Add(new("Heidi", "Heiser"));
+            }
+
             var id = WinRT.GuidGenerator.GetIID(typeof(Microsoft.UI.Xaml.Thickness));
 
             var grid = new Grid()
@@ -105,16 +108,27 @@ namespace WinUI3CSharp
             listView.ItemsSource = People;
             listView.ItemTemplate = new ItemTemplate<Person>((person) =>
             {
-                return new StackPanel()
+                var firstName = new TextBlock();
+                var lastName = new TextBlock();
+
+                return new TemplateContent<Person>()
                 {
+                    Bindings =
+                    {
+                        (person) => firstName.Text = person.FirstName,
+                        (person) => lastName.Text = person.LastName,
+                    },
+                    RootElement = new StackPanel()
+                    {
                         Orientation = Orientation.Horizontal,
                         Children = {
-                            new TextBlock(){ Text = person.FirstName},
-                            new TextBlock(){ Text = person.LastName}
+                            firstName,
+                            lastName
                         }
-                    
+                    }
                 };
             });
+            listView.Height = 50;
             Content = listView;
         }
 

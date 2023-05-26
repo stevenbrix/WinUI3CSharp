@@ -10,14 +10,20 @@ using System.Threading.Tasks;
 namespace WinUI3CSharp
 {
 
+    public struct TemplateContent<Item>
+    {
+        public TemplateContent() { }
+        public UIElement RootElement { get; set; } = null;
+        public List<Action<Item>> Bindings { get; } = new List<Action<Item>>();
+    }
     internal class DataTemplateComponent<Item> :
           global::Microsoft.UI.Xaml.Markup.IDataTemplateComponent
     {
         // Fields for each control that has bindings.
         private global::Microsoft.UI.Xaml.Controls.ContentPresenter presenter;
-        Func<Item, UIElement> builder;
-
-        public DataTemplateComponent(ContentPresenter presenter, Func<Item, UIElement> builder)
+        Func<Item, TemplateContent<Item>> builder;
+        TemplateContent<Item>? content;
+        public DataTemplateComponent(ContentPresenter presenter, Func<Item, TemplateContent<Item>> builder)
         {
             this.presenter = presenter;
             this.builder = builder;
@@ -27,7 +33,19 @@ namespace WinUI3CSharp
         public void ProcessBindings(global::System.Object item, int itemIndex, int phase, out int nextPhase)
         {
             nextPhase = -1;
-            this.presenter.Content = this.builder((Item)item);
+            if (content == null)
+            {
+                content = this.builder((Item)item);
+            }
+            if (this.presenter.Content == null)
+            {
+                this.presenter.Content = content.Value.RootElement;
+            }
+
+            foreach (var binding in content.Value.Bindings)
+            {
+                binding((Item)item);
+            }
         }
 
         public void Recycle()
@@ -38,8 +56,8 @@ namespace WinUI3CSharp
 
     internal class ItemTemplate<Item> : DataTemplate, IComponentConnector
     {
-        Func<Item, UIElement> builder;
-        public ItemTemplate(Func<Item, UIElement> builder)
+        Func<Item, TemplateContent<Item>> builder;
+        public ItemTemplate(Func<Item, TemplateContent<Item>> builder)
         {
             this.builder = builder;
             Application.LoadComponent(this, new Uri("ms-appx:///DataTemplate.xaml"));
