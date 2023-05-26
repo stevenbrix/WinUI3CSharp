@@ -103,7 +103,7 @@ namespace WinUI3CSharp
 
             var listView = new ListView();
             listView.ItemsSource = People;
-            listView.ItemTemplate = new ListViewDataTemplate<Person>((person) =>
+            listView.ItemTemplate = new ItemTemplate<Person>((person) =>
             {
                 return new StackPanel()
                 {

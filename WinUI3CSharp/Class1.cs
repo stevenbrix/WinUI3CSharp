@@ -10,16 +10,16 @@ using System.Threading.Tasks;
 namespace WinUI3CSharp
 {
 
-    internal class ListViewDataTemplateComponent<Item> :
+    internal class DataTemplateComponent<Item> :
           global::Microsoft.UI.Xaml.Markup.IDataTemplateComponent
     {
         // Fields for each control that has bindings.
-        private global::Microsoft.UI.Xaml.Controls.ListViewItem item;
+        private global::Microsoft.UI.Xaml.Controls.ContentPresenter presenter;
         Func<Item, UIElement> builder;
 
-        public ListViewDataTemplateComponent(ListViewItem item, Func<Item, UIElement> builder)
+        public DataTemplateComponent(ContentPresenter presenter, Func<Item, UIElement> builder)
         {
-            this.item = item;
+            this.presenter = presenter;
             this.builder = builder;
         }
 
@@ -27,7 +27,7 @@ namespace WinUI3CSharp
         public void ProcessBindings(global::System.Object item, int itemIndex, int phase, out int nextPhase)
         {
             nextPhase = -1;
-            this.item.Content = this.builder((Item)item);
+            this.presenter.Content = this.builder((Item)item);
         }
 
         public void Recycle()
@@ -36,10 +36,10 @@ namespace WinUI3CSharp
         }
     }
 
-    internal class ListViewDataTemplate<Item> : DataTemplate, IComponentConnector
+    internal class ItemTemplate<Item> : DataTemplate, IComponentConnector
     {
         Func<Item, UIElement> builder;
-        public ListViewDataTemplate(Func<Item, UIElement> builder)
+        public ItemTemplate(Func<Item, UIElement> builder)
         {
             this.builder = builder;
             Application.LoadComponent(this, new Uri("ms-appx:///DataTemplate.xaml"));
@@ -51,11 +51,11 @@ namespace WinUI3CSharp
         // the runtime creates an instance of the template, it invokes this method.
         public void Connect(int connectionId, object target)
         {
-            var item = target as ListViewItem;
+            var item = target as ContentPresenter;
 
             // Set the DataTemplateComponent on the ListViewItem, this will allow us to create the UI via the builder when the ProcessBindings
             // method is called with the appropriate data item.
-            Microsoft.UI.Xaml.Markup.XamlBindingHelper.SetDataTemplateComponent(item, new ListViewDataTemplateComponent<Item>(item, builder));
+            Microsoft.UI.Xaml.Markup.XamlBindingHelper.SetDataTemplateComponent(item, new DataTemplateComponent<Item>(item, builder));
         }
 
         public IComponentConnector GetBindingConnector(int connectionId, object target)
